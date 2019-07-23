@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">CurRates</string>
+	<string name="currency_country_flag_content_description">Currency country flag</string>
+	<string name="no_items_message">There were no results at this time, please try again later.</string>
 </resources>
