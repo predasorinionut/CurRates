@@ -9,7 +9,7 @@
 		android:paddingBottom="8dp"
 		android:paddingStart="16dp"
 		android:paddingEnd="16dp">
-	
+
 	<ImageView
 			android:id="@+id/currencyCountryFlag"
 			android:layout_width="@dimen/currency_flag_dimension"

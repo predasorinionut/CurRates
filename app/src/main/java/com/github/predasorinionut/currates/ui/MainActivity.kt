@@ -1,7 +1,12 @@
 package com.github.predasorinionut.currates.ui
 
+import android.content.IntentFilter
+import android.net.ConnectivityManager
 import android.os.Bundle
+import android.view.Gravity
 import android.view.View
+import android.widget.FrameLayout
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
@@ -10,14 +15,16 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.github.predasorinionut.currates.R
 import com.github.predasorinionut.currates.common.GlideApp
+import com.github.predasorinionut.currates.common.NetworkChangeReceiver
 import com.github.predasorinionut.currates.di.qualifiers.ForCurrencyFlags
 import com.github.predasorinionut.currates.vm.MainViewModel
+import com.google.android.material.snackbar.Snackbar
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.activity_main.*
 import javax.inject.Inject
 
-class MainActivity : BaseActivity() {
+class MainActivity : BaseActivity(), NetworkChangeReceiver.OnNetworkChangeListener {
     @Inject
     @ForCurrencyFlags
     lateinit var currencyFlagsMap: Map<String, Int>
@@ -25,9 +32,14 @@ class MainActivity : BaseActivity() {
     @Inject
     lateinit var viewModelFactory: ViewModelProvider.Factory
     private lateinit var mainViewModel: MainViewModel
+
+    private val networkReceiver = NetworkChangeReceiver(this)
     private val currencyListAdapter = CurrencyListAdapter()
+
     private var ratesDisposable: Disposable? = null
     private var currenciesDisposable: Disposable? = null
+
+    private var snack: Snackbar? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,14 +50,13 @@ class MainActivity : BaseActivity() {
         preloadFlags()
         setupCurrenciesRecyclerView()
         showUIStateLayout()
-
-        // TODO: handle the case when the subscribe is made for the first time and
-        //  there is no internet connection or an error occurs
         subscribeToCurrencies()
+        registerReceiver(networkReceiver, IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION))
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        unregisterReceiver(networkReceiver)
         disposeCurrenciesSubscription()
     }
 
@@ -142,5 +153,37 @@ class MainActivity : BaseActivity() {
     private fun disposeRatesSubscription() {
         ratesDisposable?.dispose()
         ratesDisposable = null
+    }
+
+    override fun onNetworkAvailable() {
+        snack?.dismiss()
+        snack = Snackbar.make(contentLayout, "Network available.", Snackbar.LENGTH_SHORT)
+        snack?.show()
+
+        subscribeToCurrencies()
+        subscribeToRates()
+    }
+
+    override fun onNetworkUnavailable() {
+        snack?.dismiss()
+        snack = Snackbar.make(contentLayout, "Waiting for network...", Snackbar.LENGTH_INDEFINITE)
+
+        snack?.view?.let {
+            val progressBar = ProgressBar(this)
+            val params = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.WRAP_CONTENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                gravity = Gravity.END
+            }
+            progressBar.layoutParams = params
+
+            (it as Snackbar.SnackbarLayout).addView(progressBar)
+        }
+
+        snack?.show()
+
+        disposeRatesSubscription()
+        disposeCurrenciesSubscription()
     }
 }
