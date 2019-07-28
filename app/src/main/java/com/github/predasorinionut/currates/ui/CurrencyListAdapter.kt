@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.github.predasorinionut.currates.R
 import com.github.predasorinionut.currates.business.models.CurrencyModel
 import com.github.predasorinionut.currates.common.GlideApp
@@ -14,6 +15,7 @@ import java.math.BigDecimal
 import java.math.MathContext
 
 class CurrencyListAdapter : RecyclerView.Adapter<CurrencyListAdapter.CurrencyViewHolder>() {
+    private var currencyFlagDimension: Int = 200
     private var recyclerView: RecyclerView? = null
     var currencyModelList = mutableListOf<CurrencyModel>()
     private var ratesMap = mapOf<String, String>()
@@ -34,6 +36,7 @@ class CurrencyListAdapter : RecyclerView.Adapter<CurrencyListAdapter.CurrencyVie
     override fun onAttachedToRecyclerView(recyclerView: RecyclerView) {
         super.onAttachedToRecyclerView(recyclerView)
         this.recyclerView = recyclerView
+        currencyFlagDimension = recyclerView.context.resources.getDimensionPixelSize(R.dimen.currency_flag_dimension)
     }
 
     override fun onDetachedFromRecyclerView(recyclerView: RecyclerView) {
@@ -100,10 +103,12 @@ class CurrencyListAdapter : RecyclerView.Adapter<CurrencyListAdapter.CurrencyVie
 
         fun bindCurrencyRate(currency: CurrencyModel) {
             with(currency) {
-                // TODO: try to preload the flags
                 GlideApp.with(itemView.context.applicationContext)
                     .load(flagId)
                     .placeholder(R.drawable.flag_placeholder)
+                    .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                    .fitCenter()
+                    .override(currencyFlagDimension, currencyFlagDimension)
                     .into(itemView.currencyCountryFlag)
 
                 itemView.currencyCountryCode.text = this.code

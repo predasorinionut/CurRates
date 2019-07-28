@@ -78,7 +78,7 @@ class CurrenciesRepositoryImpl @Inject constructor(
                     it.rates
                 }
             }
-            .onErrorResumeNext { error ->
+            .onErrorResumeNext {
                 ratesDao.getAllRates(baseCode = currencyCode)
                     .map { rateList -> rateList.associateBy({ it.code }, { it.rate.toString() }) }
             }

@@ -7,7 +7,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.github.predasorinionut.currates.R
+import com.github.predasorinionut.currates.common.GlideApp
+import com.github.predasorinionut.currates.di.qualifiers.ForCurrencyFlags
 import com.github.predasorinionut.currates.vm.MainViewModel
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
@@ -15,6 +18,10 @@ import kotlinx.android.synthetic.main.activity_main.*
 import javax.inject.Inject
 
 class MainActivity : BaseActivity() {
+    @Inject
+    @ForCurrencyFlags
+    lateinit var currencyFlagsMap: Map<String, Int>
+
     @Inject
     lateinit var viewModelFactory: ViewModelProvider.Factory
     private lateinit var mainViewModel: MainViewModel
@@ -28,6 +35,7 @@ class MainActivity : BaseActivity() {
 
         mainViewModel = ViewModelProviders.of(this, viewModelFactory).get(MainViewModel::class.java)
 
+        preloadFlags()
         setupCurrenciesRecyclerView()
         showUIStateLayout()
 
@@ -49,6 +57,19 @@ class MainActivity : BaseActivity() {
     override fun onPause() {
         super.onPause()
         disposeRatesSubscription()
+    }
+
+    private fun preloadFlags() {
+        val currencyFlagDimension = resources.getDimensionPixelSize(R.dimen.currency_flag_dimension)
+
+        currencyFlagsMap.forEach {
+            GlideApp.with(applicationContext)
+                .load(it.value)
+                .placeholder(R.drawable.flag_placeholder)
+                .diskCacheStrategy(DiskCacheStrategy.AUTOMATIC)
+                .fitCenter()
+                .preload(currencyFlagDimension, currencyFlagDimension)
+        }
     }
 
     private fun setupCurrenciesRecyclerView() {
