@@ -5,6 +5,6 @@ import java.math.BigDecimal
 data class CurrencyModel(
     val code: String,
     val name: String,
-    var rate: BigDecimal,
-    val flagId: Int
+    val flagId: Int,
+    var amount: BigDecimal
 )

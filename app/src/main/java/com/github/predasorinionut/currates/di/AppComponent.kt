@@ -1,10 +1,7 @@
 package com.github.predasorinionut.currates.di
 
 import com.github.predasorinionut.currates.App
-import com.github.predasorinionut.currates.di.modules.ActivityModule
-import com.github.predasorinionut.currates.di.modules.AppModule
-import com.github.predasorinionut.currates.di.modules.RepositoriesModule
-import com.github.predasorinionut.currates.di.modules.ViewModelModule
+import com.github.predasorinionut.currates.di.modules.*
 import com.github.predasorinionut.currates.di.scopes.ApplicationScope
 import dagger.BindsInstance
 import dagger.Component
@@ -17,6 +14,7 @@ import dagger.android.AndroidInjectionModule
         ActivityModule::class,
         ViewModelModule::class,
         RepositoriesModule::class,
+        RoomModule::class,
         AndroidInjectionModule::class]
 )
 interface AppComponent {

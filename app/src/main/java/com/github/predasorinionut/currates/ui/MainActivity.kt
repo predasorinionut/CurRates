@@ -1,6 +1,5 @@
 package com.github.predasorinionut.currates.ui
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
@@ -19,52 +18,44 @@ class MainActivity : BaseActivity() {
     @Inject
     lateinit var viewModelFactory: ViewModelProvider.Factory
     private lateinit var mainViewModel: MainViewModel
-    private val rateListAdapter = RateListAdapter()
+    private val currencyListAdapter = CurrencyListAdapter()
     private var ratesDisposable: Disposable? = null
+    private var currenciesDisposable: Disposable? = null
 
-    @SuppressLint("CheckResult")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         mainViewModel = ViewModelProviders.of(this, viewModelFactory).get(MainViewModel::class.java)
-        rates?.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
-        rates?.itemAnimator = null
-        rates?.setItemViewCacheSize(2)
-        rates.adapter = rateListAdapter
 
+        setupCurrenciesRecyclerView()
         showUIStateLayout()
 
-        mainViewModel.getCurrencyModels("EUR", 0.0)
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe { uiState ->
-                when {
-                    uiState.isError() -> {
-                        showUIStateLayout(false)
-                        Toast.makeText(this, uiState.getErrorMessage(), Toast.LENGTH_LONG).show()
-                    }
-                    uiState.isSuccess() -> {
-                        rateListAdapter.currencyModelList = uiState.getData().toMutableList()
-                        rateListAdapter.notifyItemRangeChanged(1, rateListAdapter.itemCount - 1)
-                        subscribeToRates()
-                        showUIStateLayout(false)
-                    }
-                    uiState.isEmpty() -> {
-                        showUIStateLayout(false, getString(R.string.no_items_message))
-                    }
-                }
-            }
+        // TODO: handle the case when the subscribe is made for the first time and
+        //  there is no internet connection or an error occurs
+        subscribeToCurrencies()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        disposeCurrenciesSubscription()
     }
 
     override fun onResume() {
         super.onResume()
-        if (ratesDisposable == null)
-            subscribeToRates()
+        subscribeToRates()
     }
 
     override fun onPause() {
         super.onPause()
         disposeRatesSubscription()
+    }
+
+    private fun setupCurrenciesRecyclerView() {
+        rates?.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
+        rates?.itemAnimator = null
+        rates?.setItemViewCacheSize(2)
+        rates.adapter = currencyListAdapter
     }
 
     /**
@@ -84,15 +75,46 @@ class MainActivity : BaseActivity() {
                 View.INVISIBLE
     }
 
+    private fun subscribeToCurrencies() {
+        disposeCurrenciesSubscription()
+
+        if (currencyListAdapter.currencyModelList.size > 0) return
+
+        currenciesDisposable = mainViewModel.getCurrencyModels()
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe { uiState ->
+                when {
+                    uiState.isError() -> {
+                        showUIStateLayout(false, getString(R.string.general_error_message))
+                        Toast.makeText(this, uiState.getErrorMessage(), Toast.LENGTH_SHORT).show()
+                    }
+                    uiState.isSuccess() -> {
+                        currencyListAdapter.currencyModelList = uiState.getData().toMutableList()
+                        currencyListAdapter.notifyDataSetChanged()
+                        subscribeToRates()
+                        showUIStateLayout(false)
+                    }
+                    uiState.isEmpty() -> {
+                        showUIStateLayout(false, getString(R.string.no_items_message))
+                    }
+                }
+            }
+    }
+
+    private fun disposeCurrenciesSubscription() {
+        currenciesDisposable?.dispose()
+        currenciesDisposable = null
+    }
+
     fun subscribeToRates() {
         disposeRatesSubscription()
 
-        if (rateListAdapter.currencyModelList.size == 0) return
+        if (currencyListAdapter.currencyModelList.size == 0) return
 
-        ratesDisposable = mainViewModel.updateRates(rateListAdapter.currencyModelList[0].code)
+        ratesDisposable = mainViewModel.updateRates(currencyListAdapter.currencyModelList[0].code)
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe {
-                rateListAdapter.updateCurrencyModels(mainViewModel.rates)
+                currencyListAdapter.updateCurrencyModels(mainViewModel.rates)
             }
     }
 

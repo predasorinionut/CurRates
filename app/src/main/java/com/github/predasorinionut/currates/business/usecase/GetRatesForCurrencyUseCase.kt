@@ -1,13 +1,12 @@
 package com.github.predasorinionut.currates.business.usecase
 
-import com.github.predasorinionut.currates.business.repositories.RatesRepository
+import com.github.predasorinionut.currates.business.repositories.CurrenciesRepository
 import io.reactivex.Single
 import javax.inject.Inject
 
 class GetRatesForCurrencyUseCase @Inject constructor(
-    private val ratesRepository: RatesRepository
+    private val currenciesRepository: CurrenciesRepository
 ) : (String) -> Single<Map<String, String>> {
     override fun invoke(baseCurrency: String): Single<Map<String, String>> =
-        ratesRepository.getRatesByCurrency(baseCurrency)
-            .map { it.rates }
+        currenciesRepository.getRatesForCurrency(baseCurrency)
 }

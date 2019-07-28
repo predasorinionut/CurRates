@@ -1,4 +1,4 @@
-package com.github.predasorinionut.currates.datasource
+package com.github.predasorinionut.currates.datasource.api
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty

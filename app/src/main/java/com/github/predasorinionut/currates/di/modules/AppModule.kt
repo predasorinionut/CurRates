@@ -6,7 +6,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.github.predasorinionut.currates.App
 import com.github.predasorinionut.currates.BuildConfig
-import com.github.predasorinionut.currates.datasource.RatesApi
+import com.github.predasorinionut.currates.datasource.api.CurrenciesApi
 import com.github.predasorinionut.currates.di.qualifiers.ForCurrencyFlags
 import com.github.predasorinionut.currates.di.qualifiers.ForCurrencyNames
 import com.github.predasorinionut.currates.di.scopes.ApplicationScope
@@ -40,7 +40,7 @@ abstract class AppModule {
         @Provides
         @ApplicationScope
         @JvmStatic
-        fun provideRatesApi(retrofit: Retrofit): RatesApi = retrofit.create(RatesApi::class.java)
+        fun provideRatesApi(retrofit: Retrofit): CurrenciesApi = retrofit.create(CurrenciesApi::class.java)
 
         @Provides
         @ApplicationScope

@@ -10,11 +10,13 @@ import com.github.predasorinionut.currates.R
 import com.github.predasorinionut.currates.business.models.CurrencyModel
 import com.github.predasorinionut.currates.common.GlideApp
 import kotlinx.android.synthetic.main.currency_rate_item.view.*
+import java.math.BigDecimal
 import java.math.MathContext
 
-class RateListAdapter : RecyclerView.Adapter<RateListAdapter.CurrencyViewHolder>() {
+class CurrencyListAdapter : RecyclerView.Adapter<CurrencyListAdapter.CurrencyViewHolder>() {
     private var recyclerView: RecyclerView? = null
     var currencyModelList = mutableListOf<CurrencyModel>()
+    private var ratesMap = mapOf<String, String>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CurrencyViewHolder =
         CurrencyViewHolder(
@@ -39,14 +41,17 @@ class RateListAdapter : RecyclerView.Adapter<RateListAdapter.CurrencyViewHolder>
         this.recyclerView = null
     }
 
-    fun updateCurrencyModels(rates: Map<String, String>) {
+    fun updateCurrencyModels(rates: Map<String, String> = ratesMap) {
+        ratesMap = rates
         for (i in 1 until currencyModelList.size) {
-            currencyModelList[i].rate = rates[currencyModelList[i].code]?.toBigDecimal()?.multiply(
-                currencyModelList[0].rate,
+            currencyModelList[i].amount = ratesMap[currencyModelList[i].code]?.toBigDecimal()?.multiply(
+                currencyModelList[0].amount,
                 MathContext.DECIMAL64
-            ) ?: currencyModelList[i].rate
+            ) ?: BigDecimal.ZERO
         }
-        notifyItemRangeChanged(1, itemCount - 1)
+        recyclerView?.post {
+            notifyItemRangeChanged(1, itemCount - 1)
+        }
     }
 
     inner class CurrencyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -60,7 +65,6 @@ class RateListAdapter : RecyclerView.Adapter<RateListAdapter.CurrencyViewHolder>
 
                     override fun afterTextChanged(source: Editable?) {
                         source?.let {
-
                             val result: String = if (adapterPosition == 0) {
                                 inputRegex.find(source)?.value ?: ""
                             } else {
@@ -77,10 +81,8 @@ class RateListAdapter : RecyclerView.Adapter<RateListAdapter.CurrencyViewHolder>
                     override fun onTextChanged(source: CharSequence?, p1: Int, p2: Int, p3: Int) {
                         if (adapterPosition == 0)
                             source?.toString()?.toBigDecimalOrNull().let {
-                                currencyModelList[0].rate = it ?: java.math.BigDecimal.ZERO
-                                recyclerView?.post {
-                                    notifyItemRangeChanged(1, itemCount - 1)
-                                }
+                                currencyModelList[0].amount = it ?: BigDecimal.ZERO
+                                updateCurrencyModels()
                             }
                     }
                 })
@@ -98,6 +100,7 @@ class RateListAdapter : RecyclerView.Adapter<RateListAdapter.CurrencyViewHolder>
 
         fun bindCurrencyRate(currency: CurrencyModel) {
             with(currency) {
+                // TODO: try to preload the flags
                 GlideApp.with(itemView.context.applicationContext)
                     .load(flagId)
                     .placeholder(R.drawable.flag_placeholder)
@@ -106,9 +109,9 @@ class RateListAdapter : RecyclerView.Adapter<RateListAdapter.CurrencyViewHolder>
                 itemView.currencyCountryCode.text = this.code
                 itemView.currencyName.text = name
                 if (adapterPosition == 0) {
-                    itemView.currencyAmount.setText("${currencyModelList[0].rate}")
+                    itemView.currencyAmount.setText("${currencyModelList[0].amount}")
                 } else {
-                    itemView.currencyAmount.setText(if (rate > java.math.BigDecimal.ZERO) rate.toString() else "")
+                    itemView.currencyAmount.setText(if (amount > BigDecimal.ZERO) amount.toString() else "")
                 }
             }
         }
